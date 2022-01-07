@@ -31,5 +31,6 @@ def lambda_handler(event, context):
     event["inferences"] = inferences
     return {
         'statusCode': 200,
-        'body': json.dumps(event)
+        'body': json.dumps(event),
+        'inferences': inferences
     }
