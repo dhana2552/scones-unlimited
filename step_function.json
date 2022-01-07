@@ -8,17 +8,21 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-1:515866017495:function:data-generation-lambda:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:515866017495:function:serializing-lambda:$LATEST"
       },
-      "Next": "Second Lambda",
-      "Catch": [
+      "Retry": [
         {
           "ErrorEquals": [
-            "States.ALL"
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
           ],
-          "Next": "First Lambda"
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
         }
-      ]
+      ],
+      "Next": "Second Lambda"
     },
     "Second Lambda": {
       "Type": "Task",
@@ -26,7 +30,7 @@
       "OutputPath": "$.Payload",
       "Parameters": {
         "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-1:515866017495:function:image-classification-lambda:$LATEST"
+        "FunctionName": "arn:aws:lambda:us-east-1:515866017495:function:predict-lambda:$LATEST"
       },
       "Retry": [
         {
@@ -40,28 +44,15 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Third Lambda",
-      "Catch": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Second Lambda"
-        }
-      ]
+      "Next": "Third Lambda"
     },
     "Third Lambda": {
       "Type": "Task",
       "Resource": "arn:aws:states:::lambda:invoke",
       "OutputPath": "$.Payload",
       "Parameters": {
-        "FunctionName": "arn:aws:lambda:us-east-1:515866017495:function:filter-lambda:$LATEST",
-        "Payload": {
-          "inferences": [
-            0.9,
-            1
-          ]
-        }
+        "FunctionName": "arn:aws:lambda:us-east-1:515866017495:function:validation-lambda:$LATEST",
+        "Payload.$": "$"
       },
       "Retry": [
         {
@@ -75,15 +66,7 @@
           "BackoffRate": 2
         }
       ],
-      "End": true,
-      "Catch": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "Next": "Third Lambda"
-        }
-      ]
+      "End": true
     }
   }
 }
